@@ -1,7 +1,6 @@
 import express from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
-import cookieParser from 'cookie-parser';
 import config from './config/env.js';
 import errorHandler from './middleware/errorMiddleware.js';
 
@@ -12,12 +11,21 @@ import dashboardRoutes from './routes/dashboardRoutes.js';
 
 const app = express();
 
+app.set('trust proxy', 1);
+
+const allowedOrigins = config.frontendUrl.split(',').map(s => s.trim()).filter(Boolean);
+
 app.use(cors({
-  origin: config.frontendUrl,
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
 }));
 
-app.use(cookieParser());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
